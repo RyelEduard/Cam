@@ -36,8 +36,80 @@ const App: React.FC = () => {
   const locationLogRef = useRef<{ speed: number; timestamp: number }[]>([]);
   const lastFrameTimeRef = useRef<number>(0);
 
+  // Request and check runtime permissions (best-effort)
+  const requestRuntimePermissions = useCallback(async () => {
+    try {
+      // Try the Permissions API first (not available in all environments)
+      const perms = (navigator as any).permissions;
+      if (perms && typeof perms.query === "function") {
+        try {
+          // Query camera/microphone/geolocation permission states when supported
+          const cameraPerm = await perms.query({ name: "camera" } as any);
+          const micPerm = await perms.query({ name: "microphone" } as any);
+          const geoPerm = await perms.query({ name: "geolocation" } as any);
+
+          console.log("Permissions status:", {
+            camera: cameraPerm.state,
+            microphone: micPerm.state,
+            geolocation: geoPerm.state,
+          });
+
+          // If any are denied, inform the user (they must enable in settings)
+          if (
+            cameraPerm.state === "denied" ||
+            micPerm.state === "denied" ||
+            geoPerm.state === "denied"
+          ) {
+            console.warn(
+              "One or more permissions are denied. Please enable camera/microphone/location in the app settings."
+            );
+            // We still attempt to prompt below where possible.
+          }
+        } catch (e) {
+          // Some browsers throw for unknown permission names; ignore and continue
+          console.debug("Permissions API query error (non-fatal):", e);
+        }
+      }
+
+      // Trigger permission prompts by requesting resources:
+      // 1) Camera & microphone (this also triggers audio permission)
+      try {
+        const s = await navigator.mediaDevices.getUserMedia({
+          video: { facingMode: { ideal: "environment" } },
+          audio: true,
+        });
+        // Immediately stop tracks if we're only trying to prompt permissions now
+        s.getTracks().forEach((t) => t.stop());
+      } catch (err) {
+        console.warn("Camera/microphone permission was not granted or failed:", err);
+      }
+
+      // 2) Location
+      try {
+        await new Promise<void>((resolve, reject) => {
+          navigator.geolocation.getCurrentPosition(
+            () => resolve(),
+            (err) => {
+              console.warn("Geolocation permission denied or error:", err);
+              resolve(); // resolve so app continues — we just log
+            },
+            { enableHighAccuracy: true, timeout: 5000 }
+          );
+        });
+      } catch (e) {
+        console.debug("Geolocation prompt issue:", e);
+      }
+    } catch (e) {
+      console.error("Error when requesting runtime permissions:", e);
+    }
+  }, []);
+
   const startCamera = useCallback(async () => {
     try {
+      // Prefer explicit prompt first so we have user consent
+      await requestRuntimePermissions();
+
+      // Open the camera using the rear/back camera (environment)
       const stream = await navigator.mediaDevices.getUserMedia({
         video: { facingMode: { ideal: "environment" } },
         audio: true,
@@ -49,8 +121,15 @@ const App: React.FC = () => {
       }
     } catch (err) {
       console.error("Camera error:", err);
+      // If permission denied, notify the user
+      // (You could show a custom UI here instead of alert)
+      if ((err as any)?.name === "NotAllowedError" || (err as any)?.message?.includes("Permission")) {
+        alert(
+          "Camera or microphone permission was denied. Please enable the permissions in your app settings to use the camera."
+        );
+      }
     }
-  }, []);
+  }, [requestRuntimePermissions]);
 
   useEffect(() => {
     startCamera();
@@ -65,7 +144,10 @@ const App: React.FC = () => {
         if (isRecording)
           locationLogRef.current.push({ speed, timestamp: pos.timestamp });
       },
-      null,
+      (err) => {
+        // handle geolocation errors (including permission denials)
+        console.warn("Geolocation watchPosition error:", err);
+      },
       { enableHighAccuracy: true }
     );
     return () => {
