@@ -1,0 +1,9 @@
+{
+  "appId": "com.velocicam.pro",
+  "appName": "VelociCam",
+  "webDir": "dist",
+  "bundledWebRuntime": false,
+  "server": {
+    "androidScheme": "https"
+  }
+}

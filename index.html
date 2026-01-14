@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover"
+    />
+    <title>VelociCam Pro</title>
+    <meta name="theme-color" content="#000000" />
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=JetBrains+Mono:wght@700&display=swap"
+      rel="stylesheet"
+    />
+    <link
+      rel="stylesheet"
+      href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+    />
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <style>
+      :root {
+        --safe-top: env(safe-area-inset-top, 0px);
+        --safe-bottom: env(safe-area-inset-bottom, 0px);
+      }
+      body {
+        font-family: "Inter", sans-serif;
+        overscroll-behavior: none;
+        background-color: #000;
+        margin: 0;
+        padding: 0;
+        height: 100dvh;
+        width: 100vw;
+        overflow: hidden;
+        -webkit-user-select: none;
+        user-select: none;
+      }
+      #root {
+        height: 100dvh;
+      }
+      .glass {
+        background: rgba(0, 0, 0, 0.6);
+        backdrop-filter: blur(16px);
+        -webkit-backdrop-filter: blur(16px);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+      }
+      .safe-pt {
+        padding-top: calc(0.5rem + var(--safe-top));
+      }
+      .safe-pb {
+        padding-bottom: calc(1.5rem + var(--safe-bottom));
+      }
+      * {
+        -webkit-tap-highlight-color: transparent;
+      }
+      .leaflet-container {
+        background: transparent !important;
+        border-radius: 2rem;
+      }
+      .leaflet-tile-pane {
+        opacity: 0.65;
+        filter: invert(100%) hue-rotate(180deg) brightness(1.2) contrast(0.8);
+      }
+      .leaflet-control-zoom,
+      .leaflet-control-attribution {
+        display: none !important;
+      }
+    </style>
+    <script type="importmap">
+      {
+        "imports": {
+          "vite": "https://esm.sh/vite@^7.3.1",
+          "react-dom/": "https://esm.sh/react-dom@^19.2.3/",
+          "@vitejs/plugin-react": "https://esm.sh/@vitejs/plugin-react@^5.1.2",
+          "@google/genai": "https://esm.sh/@google/genai@^1.35.0",
+          "react/": "https://esm.sh/react@^19.2.3/",
+          "react": "https://esm.sh/react@^19.2.3"
+        }
+      }
+    </script>
+  </head>
+  <body class="bg-black text-white">
+    <div id="root"></div>
+    <script type="module" src="/index.tsx"></script>
+  </body>
+</html>
